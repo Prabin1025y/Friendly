@@ -7,9 +7,11 @@ import { SignInButton, UserButton } from "@clerk/nextjs"
 import { currentUser } from "@clerk/nextjs/server"
 import NavMobile from "./NavMobile"
 import { Button } from "./ui/button"
+import { syncUser } from "@/actions/user.action"
 
 async function Navbar() {
     const user = await currentUser()
+    if(user) await syncUser();
 
     return (
         <nav className="flex items-center justify-between px-4 lg:px-32 py-4 border-b">
@@ -40,17 +42,17 @@ async function Navbar() {
                 <DarkButton />
                 {user ?
                     <div className="hidden md:flex items-center space-x-12">
-                        <Link href="/pricing" className="text-sm flex items-center gap-1 font-medium hover:text-primary">
+                        <Link href="/" className="text-sm flex items-center gap-1 font-medium hover:text-primary">
                             <Home size={20} /> Home
                         </Link>
-                        <Link href="/about" className="text-sm flex items-center gap-1 font-medium hover:text-primary">
+                        <Link href="/notification" className="text-sm flex items-center gap-1 font-medium hover:text-primary">
                             <Bell size={20} /> Notifications
                         </Link>
-                        <Link href="/blog" className="text-sm flex items-center gap-1 font-medium hover:text-primary">
+                        <Link href="/profile" className="text-sm flex items-center gap-1 font-medium hover:text-primary">
                             <User size={20} /> Profile
                         </Link>
                         <UserButton />
-                    </div> : <Button>Sign In</Button>
+                    </div> : <SignInButton><Button>Sign In</Button></SignInButton>
                 }
             </div>
 
