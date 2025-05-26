@@ -3,11 +3,8 @@ import type React from "react"
 
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import AuthorAvatar from "./AuthorAvatar"
-import FollowButton from "./FollowButton"
 import LikeComment from "./LikeComment"
-import { getCurrentUserId } from "@/actions/user.action"
 import { fetchPost } from "@/actions/post.action"
-import { getFollowers, getFollowings } from "@/actions/follow.action"
 import DeleteButton from "./DeleteButton"
 import { formatDistanceToNow } from "date-fns"
 
@@ -19,24 +16,13 @@ import { formatDistanceToNow } from "date-fns"
 type Post = NonNullable<Awaited<ReturnType<typeof fetchPost>>['posts']>[number]
 
 type PropType = {
-    post: Post
+    post: Post,
+    currentUserId: string
 }
 
 
 
-export default async function PostCard({ post }: PropType) {
-
-    const userId = await getCurrentUserId()
-
-    // let followings: FollowingType[] = []
-
-    // if(userId){
-    //     const result = await getFollowings()
-
-    //     if(result.success && result.followings){
-    //         followings = result.followings
-    //     }
-    // }
+export default function PostCard({ post, currentUserId }: PropType) {
 
     return (
         <Card className="w-full gap-0">
@@ -44,7 +30,7 @@ export default async function PostCard({ post }: PropType) {
             <CardHeader className="pb-3">
                 <div className="flex justify-between items-center">
                     <div className="flex items-center gap-3">
-                        <AuthorAvatar avatarURL={post.author.image || "/placeholder.svg"} name={post.author.name || "user"} />
+                        <AuthorAvatar avatarURL={post.author.image || "/placeholder.svg"} name={post.author.name || "user"} username={post.author.username} />
                         <div>
                             <div className="font-semibold">{post.author.name}</div>
                             <div className="text-sm text-muted-foreground">@{post.author.username}</div>
@@ -54,7 +40,7 @@ export default async function PostCard({ post }: PropType) {
                         <span className="text-xs text-muted-foreground whitespace-nowrap">
                             {formatDistanceToNow(post.createdAt, { addSuffix: true })}
                         </span>
-                        {post.authorId == userId && (
+                        {post.authorId == currentUserId && (
                             <DeleteButton postId={post.id} />
                         )}
                     </div>
@@ -71,7 +57,7 @@ export default async function PostCard({ post }: PropType) {
                 )}
             </CardContent>
 
-            <LikeComment likes={post.likes} comments={post.comments} postId={post.id} userId={userId || ''} likesCount={post._count.likes} commentsCount={post._count.comments} />
+            <LikeComment likes={post.likes} comments={post.comments} postId={post.id} userId={currentUserId || ''} likesCount={post._count.likes} commentsCount={post._count.comments} />
         </Card>
     )
 }

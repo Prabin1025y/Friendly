@@ -1,6 +1,7 @@
 'use server'
 import prisma from "@/lib/prisma";
 import { auth, currentUser } from "@clerk/nextjs/server";
+import { revalidatePath } from "next/cache";
 
 export async function syncUser() {
     try {
@@ -101,5 +102,155 @@ export async function getSuggestedUsers(count: number) {
         return users
     } catch (error) {
         console.log("Error while getting suggested users", error)
+    }
+}
+
+export async function getUserByUsername(username: string) {
+    try {
+        const user = await prisma.user.findUnique({
+            where: {
+                username
+            },
+            include: {
+                posts: {
+                    orderBy: {
+                        createdAt: "desc" //Sort the posts so newest comes first
+                    },
+                    include: {
+                        author: {
+                            select: {
+                                id: true,
+                                name: true,
+                                username: true,
+                                image: true
+                            }
+                        },
+                        comments: {
+                            include: {
+                                author: {
+                                    select: {
+                                        id: true,
+                                        name: true,
+                                        username: true,
+                                        image: true
+                                    }
+                                }
+                            },
+                            orderBy: {
+                                createdAt: "asc"
+                            }
+                        },
+                        likes: {
+                            include: {
+                                author: {
+                                    select: {
+                                        id: true,
+                                        name: true,
+                                        username: true,
+                                        image: true
+                                    }
+                                }
+                            }
+                        },
+                        _count: {
+                            select: {
+                                comments: true,
+                                likes: true
+                            }
+                        }
+                    }
+                },
+                likes: {
+                    orderBy: {
+                        createdAt: "desc"
+                    },
+                    include: {
+                        post: {
+                            include: {
+                                author: {
+                                    select: {
+                                        id: true,
+                                        name: true,
+                                        username: true,
+                                        image: true
+                                    }
+                                },
+                                comments: {
+                                    orderBy: {
+                                        createdAt: 'asc'
+                                    },
+                                    include: {
+                                        author: {
+                                            select: {
+                                                id: true,
+                                                name: true,
+                                                username: true,
+                                                image: true
+                                            }
+                                        }
+                                    }
+                                },
+                                likes: {
+                                    include: {
+                                        author: {
+                                            select: {
+                                                id: true,
+                                                name: true,
+                                                username: true,
+                                                image: true
+                                            }
+                                        }
+                                    }
+                                }, _count: {
+                                    select: {
+                                        comments: true,
+                                        likes: true
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                _count: {
+                    select: {
+                        followers: true,
+                        following: true,
+                        posts: true,
+                        likes: true
+                    }
+                }
+            }
+        })
+
+        if (!user)
+            return { success: false, userDoesNotExists: true }
+
+        //Check if current user is following this user
+        const userId = await getCurrentUserId()
+        let isFollowing: boolean;
+
+        if (user && userId) {
+            const following = await prisma.follows.findUnique({
+                where: {
+                    followerId_followingId: {
+                        followerId: userId,
+                        followingId: user?.id
+                    }
+                }
+            })
+
+            if (following)
+                isFollowing = true
+            else
+                isFollowing = false
+        } else {
+            isFollowing = false
+        }
+
+        return { success: true, user, isFollowing };
+
+    } catch (error) {
+        console.error("Error while fetching user Details", error)
+        return { success: false, message: "Something went wrong" }
     }
 }

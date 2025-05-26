@@ -74,8 +74,10 @@ export async function fetchPost() {
                     include: {
                         author: {
                             select: {
+                                id:true,
                                 image: true,
-                                name: true
+                                name: true, 
+                                username: true
                             }
                         }
                     }

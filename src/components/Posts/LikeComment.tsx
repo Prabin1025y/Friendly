@@ -7,37 +7,20 @@ import { Button } from '../ui/button'
 import { Collapsible, CollapsibleContent } from '../ui/collapsible'
 import { Input } from '../ui/input'
 import { CardFooter } from '../ui/card'
-import { toggleLike } from '@/actions/post.action'
+import { fetchPost, toggleLike } from '@/actions/post.action'
 import { addComment } from '@/actions/comment.action'
 import toast from 'react-hot-toast'
 import { toastOptions } from '@/utils/utils'
 import { useUser } from '@clerk/nextjs'
 import { formatDistanceToNow } from 'date-fns'
+import Link from 'next/link'
+
+type LikeType = NonNullable<Awaited<ReturnType<typeof fetchPost>>['posts']>[number]['likes'][number]
+type CommentType = NonNullable<Awaited<ReturnType<typeof fetchPost>>['posts']>[number]['comments'][number]
 
 type LikeCommentPropType = {
-    likes: {
-        id: string
-        postId: string
-        authorId: string,
-        createdAt: Date,
-        author: {
-            name: string | null,
-            image: string | null
-        }
-    }[],
-    comments: {
-        id: string
-        content: string
-        authorId: string
-        postId: string
-        author: {
-            id: string
-            name: string | null
-            username: string
-            image: string | null
-        }
-        createdAt: Date
-    }[]
+    likes: LikeType[],
+    comments: CommentType[]
     likesCount: number
     commentsCount: number
     postId: string
@@ -133,20 +116,17 @@ const LikeComment = ({ likes, comments, postId, userId, likesCount, commentsCoun
                                 {likes.map(like => (
                                     <div key={like.id} className="flex items-center justify-between">
                                         <div className="flex items-center gap-3">
-                                            <Avatar>
-                                                <AvatarImage src={like.author.image || "/placeholder.svg"} alt="User" />
-                                                <AvatarFallback>U</AvatarFallback>
-                                            </Avatar>
+                                            <Link href={`/profile/${like.author.username}`}>
+                                                <Avatar>
+                                                    <AvatarImage src={like.author.image || "/placeholder.svg"} alt="User" />
+                                                    <AvatarFallback>U</AvatarFallback>
+                                                </Avatar>
+                                            </Link>
                                             <div>
                                                 <div className="font-semibold">{like.author.name}</div>
                                                 {/* <div className="text-sm text-muted-foreground">@user{index + 1}</div> */}
                                             </div>
                                         </div>
-                                        {true && (
-                                            <Button variant="outline" size="sm">
-                                                Follow
-                                            </Button>
-                                        )}
                                     </div>
                                 ))}
                             </div>
@@ -164,10 +144,12 @@ const LikeComment = ({ likes, comments, postId, userId, likesCount, commentsCoun
                             <div className="space-y-4 mb-4">
                                 {comments.map((comment) => (
                                     <div key={comment.id} className="flex gap-2">
-                                        <Avatar className="h-8 w-8">
-                                            <AvatarImage src={comment.author.image || "/placeholder.svg"} alt={comment.author.name || "commenter avatar"} />
-                                            <AvatarFallback>{comment.author.name?.charAt(0)}</AvatarFallback>
-                                        </Avatar>
+                                        <Link href={`/profile/${comment.author.username}`}>
+                                            <Avatar className="h-8 w-8">
+                                                <AvatarImage src={comment.author.image || "/placeholder.svg"} alt={comment.author.name || "commenter avatar"} />
+                                                <AvatarFallback>{comment.author.name?.charAt(0)}</AvatarFallback>
+                                            </Avatar>
+                                        </Link>
                                         <div className="flex-1">
                                             <div className="bg-muted p-2 rounded-md">
                                                 <div className="flex justify-between">
